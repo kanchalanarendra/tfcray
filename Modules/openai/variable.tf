@@ -10,23 +10,23 @@ variable "location" {
 
 variable "openainame" {
   type        = string
-  description = "Name of the OpenAI cognitive account"
+  description = "Name of the OpenAI cognitive account (must be globally unique)"
 }
 
 variable "model_name" {
   type        = string
-  description = "Name of the OpenAI model to deploy"
+  description = "Name of the OpenAI model to deploy (e.g., gpt-4o-mini, gpt-4, gpt-35-turbo)"
 }
 
 variable "model_version" {
   type        = string
-  description = "Version of the OpenAI model"
+  description = "Version of the OpenAI model (e.g., 2024-07-18)"
   default     = "2024-07-18"
 }
 
 variable "modeldeploymentname" {
   type        = string
-  description = "Name of the model deployment"
+  description = "Name of the model deployment (e.g., chat-model, code-model)"
   default     = "chat-model"
 }
 
@@ -47,7 +47,8 @@ variable "storage_account_id" {
 
 variable "keyvault_id" {
   type        = string
-  description = "The ID of the Key Vault to be used by the AI Foundry workspace"
+  description = "The ID of the Key Vault to be used by the AI Foundry workspace (sensitive)"
+  sensitive   = true
 }
 
 variable "app_insights_id" {

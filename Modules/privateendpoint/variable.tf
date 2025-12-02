@@ -1,13 +1,15 @@
 variable "location" {
-  type = string
+  description = "Azure region for private endpoints"
+  type        = string
 }
 
 variable "resourcegroupname" {
-  type = string
+  description = "Name of the resource group"
+  type        = string
 }
 
 variable "private_endpoints" {
-  description = "Map of private endpoints to create"
+  description = "Map of private endpoints to create with their configurations"
   type = map(object({
     name               = string
     subnet_id          = string

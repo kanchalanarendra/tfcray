@@ -1,9 +1,14 @@
 variable "resourcegroupname" {
-  type = string
+  description = "Name of the resource group"
+  type        = string
 }
+
 variable "location" {
-  type = string
+  description = "Azure region for the static web app"
+  type        = string
 }
+
 variable "static_web_app_name" {
-  type = string
+  description = "Name of the static web app resource"
+  type        = string
 }

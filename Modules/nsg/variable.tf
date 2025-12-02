@@ -1,20 +1,25 @@
 variable "location" {
-  type = string
+  description = "Azure region for the Network Security Groups"
+  type        = string
 }
 
 variable "resourcegroupname" {
-  type = string
+  description = "Name of the resource group"
+  type        = string
 }
 
 variable "project_name" {
-  type = string
+  description = "Project name for resource naming"
+  type        = string
 }
 
 variable "environment" {
-  type = string
+  description = "Deployment environment (e.g., dev, staging, prod)"
+  type        = string
 }
 
 variable "subnets" {
+  description = "Map of subnet configurations containing subnet IDs"
   type = map(object({
     subnet_id = string
   }))

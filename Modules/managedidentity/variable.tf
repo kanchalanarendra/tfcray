@@ -7,7 +7,7 @@ variable "managed_identities" {
     has_openai_access   = optional(bool, false)
     has_acr_access      = optional(bool, false)
   }))
-  description = "Map of managed identities to create with their service access permissions"
+  description = "Map of managed identities to create with their service access permissions (RBAC roles)"
   default = {
     staticwebapp = {
       name                = "mi-staticwebapp"
@@ -30,7 +30,8 @@ variable "managed_identities" {
 
 variable "keyvault_id" {
   type        = string
-  description = "Resource ID of the Key Vault"
+  description = "Resource ID of the Key Vault (sensitive)"
+  sensitive   = true
 }
 
 variable "storage_account_id" {
@@ -45,12 +46,13 @@ variable "cosmos_id" {
 
 variable "tenant_id" {
   type        = string
-  description = "Azure tenant ID"
+  description = "Azure tenant ID (sensitive)"
+  sensitive   = true
 }
 
 variable "location" {
   type        = string
-  description = "Azure region"
+  description = "Azure region for managed identities"
 }
 
 variable "resourcegroupname" {
@@ -70,6 +72,6 @@ variable "openai_id" {
 
 variable "ai_foundry_id" {
   type        = string
-  description = "Resource ID of the AI Foundry workspace (optional)"
+  description = "Resource ID of the AI Foundry workspace (optional, for future use)"
   default     = null
 }

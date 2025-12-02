@@ -1,4 +1,9 @@
 # ----------------------------
+# Get Current Azure Client Config
+# ----------------------------
+data "azurerm_client_config" "current" {}
+
+# ----------------------------
 # Create User Assigned Managed Identities
 # ----------------------------
 resource "azurerm_user_assigned_identity" "fsdu_mid" {
@@ -9,25 +14,37 @@ resource "azurerm_user_assigned_identity" "fsdu_mid" {
 }
 
 # ----------------------------
-# Key Vault Access - Only for identities with has_keyvault_access = true
+# Key Vault Access - Bootstrap Only (commented for removal after initial setup)
+# Permanent access is managed via RBAC roles instead
 # ----------------------------
-resource "azurerm_key_vault_access_policy" "fsdu_kv_access" {
+# Uncomment this block ONLY during initial bootstrap, then remove after deployment
+resource "azurerm_key_vault_access_policy" "bootstrap_admin" {
+  key_vault_id = var.keyvault_id
+  tenant_id    = var.tenant_id
+  object_id    = data.azurerm_client_config.current.object_id  # Replace with your admin/service principal OID
+
+  secret_permissions = ["Backup", "Delete", "Get", "List", "Purge", "Recover", "Restore", "Set"]
+  key_permissions    = ["Backup", "Create", "Decrypt", "Delete", "Encrypt", "Get", "Import", "List", "Purge", "Recover", "Restore", "Sign", "UnwrapKey", "Update", "Verify", "WrapKey"]
+}
+
+# ----------------------------
+# Key Vault RBAC Role Assignments - For Ongoing Access
+# ----------------------------
+# Only identities with has_keyvault_access = true get Key Vault Secrets User role
+resource "azurerm_role_assignment" "fsdu_kv_secrets_user" {
   for_each = {
     for key, identity in azurerm_user_assigned_identity.fsdu_mid :
     key => identity if var.managed_identities[key].has_keyvault_access
   }
   
-  key_vault_id = var.keyvault_id
-  tenant_id    = var.tenant_id
-  object_id    = each.value.principal_id
-
-  secret_permissions = ["Get", "List"]
-  key_permissions    = ["Get", "List"]
+  scope              = var.keyvault_id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id       = each.value.principal_id
 }
 
-# # ----------------------------
-# # Storage Account Role Assignment
-# # ----------------------------
+# ----------------------------
+# Storage Account Role Assignment
+# ----------------------------
 resource "azurerm_role_assignment" "fsdu_storage_access" {
   for_each = {
     for key, identity in azurerm_user_assigned_identity.fsdu_mid :
@@ -39,9 +56,9 @@ resource "azurerm_role_assignment" "fsdu_storage_access" {
   principal_id         = each.value.principal_id
 }
 
-# # ----------------------------
-# # Cosmos DB Role Assignment
-# # ----------------------------
+# ----------------------------
+# Cosmos DB Role Assignment
+# ----------------------------
 resource "azurerm_role_assignment" "fsdu_cosmos_access" {
   for_each = {
     for key, identity in azurerm_user_assigned_identity.fsdu_mid :

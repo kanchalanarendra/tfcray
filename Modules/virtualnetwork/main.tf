@@ -13,6 +13,6 @@ resource "azurerm_subnet" "fsdu_subnet" {
   virtual_network_name = azurerm_virtual_network.fsdu_vnet.name
   address_prefixes     = each.value.address_prefixes
 
-  private_endpoint_network_policies = "Enabled"
+  private_endpoint_network_policies = "Disabled"
 
 }

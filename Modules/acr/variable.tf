@@ -1,16 +1,19 @@
 variable "acr_name" {
   type        = string
-  description = "name of the container registry"
+  description = "Name of the container registry (must be globally unique, lowercase alphanumeric only)"
 }
+
 variable "location" {
   type        = string
-  description = "location of the container registry"
+  description = "Azure region for the container registry"
 }
+
 variable "resourcegroupname" {
   type        = string
-  description = "name of the resource group where the container registry will be created"
+  description = "Name of the resource group where the container registry will be created"
 }
+
 variable "tags" {
   type        = map(string)
-  description = "tags to be applied to the container registry"
+  description = "Tags to apply to the container registry"
 }

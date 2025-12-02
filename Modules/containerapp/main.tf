@@ -2,7 +2,9 @@ resource "azurerm_container_app_environment" "fsdu_container_environment" {
   name                           = var.container_environment_name
   location                       = var.location
   resource_group_name            = var.resourcegroupname
-  internal_load_balancer_enabled = true
+  # Internal Load Balancer enabled: Traffic routed through internal ALB only
+  # No external/public access possible
+  internal_load_balancer_enabled = var.internal_load_balancer_enabled
   infrastructure_subnet_id       = var.subnet_id
 }
 
@@ -18,8 +20,9 @@ resource "azurerm_container_app" "fsdu_container_app" {
   }
 
   ingress {
-    external_enabled = false
-    target_port      = 80
+    # External access disabled: Internal-only access through ALB/API Gateway
+    external_enabled = var.external_enabled
+    target_port      = var.target_port
 
     traffic_weight {
       percentage      = 100
@@ -30,7 +33,9 @@ resource "azurerm_container_app" "fsdu_container_app" {
   template {
     container {
       name   = var.container_name
-      image  = "mcr.microsoft.com/k8se/quickstart:latest"
+      # Use production image from ACR with managed identity authentication
+      # Requires: managed identity with AcrPull role assigned to ACR
+      image  = var.use_acr_image ? "${var.acr_login_server}/${var.acr_image_name}" : "mcr.microsoft.com/k8se/quickstart:latest"
       cpu    = var.cpu
       memory = var.memory
     }

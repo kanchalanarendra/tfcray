@@ -35,7 +35,7 @@ module "nsg" {
 
 module "storageaccount" {
   source = "./Modules/storageaccount"
-  storageaccountname = "storgae${local.project_name}${var.environment}"
+  storageaccountname = "storage${local.project_name}${var.environment}"
   location = module.ResourceGroup["storage"].location
   resourcegroupname = module.ResourceGroup["storage"].rgname
   account_tier = var.storage_account_tier
@@ -102,6 +102,12 @@ module "containerapp" {
   managed_identity_id = module.managedidentity.backend_identity_id
   cpu = var.cpu
   memory = var.memory
+  
+  # ACR Configuration - uses managed identity for authentication
+  # Managed identity must have AcrPull role (already configured in managedidentity module)
+  use_acr_image    = true
+  acr_login_server = module.acr.acr_login_server
+  acr_image_name   = var.acr_image_name
 }
 
 module "staticwebapp" {

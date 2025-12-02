@@ -33,6 +33,7 @@ account_replication_type = "LRS"
 cpu                      = 1
 memory                   = "2Gi"
 openai_model_id          = "gpt-4o-mini"
+acr_image_name           = "fsdu-app:latest"
 
 
 subscription_id = ""
