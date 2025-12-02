@@ -7,3 +7,4 @@ output "static_web_app_name" {
 output "static_web_app_default_hostname" {
   value = azurerm_static_web_app.fsdu_static_web_app.default_host_name
 }
+

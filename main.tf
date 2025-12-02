@@ -43,22 +43,26 @@ module "storageaccount" {
   tags = var.tags
   storagecontainername = "container-${local.project_name}-${var.environment}"
 }
-resource "azurerm_storage_account_network_rules" "fsdu_storage_network_lockdown" {
-  storage_account_id = module.storageaccount.storage_account_id
-  default_action = "Deny"
-  bypass         = ["AzureServices"]
-
-  depends_on = [
-    module.storage_blob_container,
-    module.private_endpoints
-  ]
-}
 
 module "storage_blob_container" {
   source = "./Modules/storageblob"
   storagecontainername = "container-${local.project_name}-${var.environment}"
-  storageaccountname = module.storageaccount.storage_account_name
- # private_endpoint_dependency = [module.private_endpoints.private_endpoint_ids["storage_blob_pe"]]
+  storageaccountid = module.storageaccount.storage_account_id
+  storage_account_name = module.storageaccount.storage_account_name
+  create_container = false
+  private_endpoint_dependency = [ module.private_endpoints.private_endpoint_ids["storage_blob_pe"] ]
+  
+  depends_on = [module.storageaccount]
+}
+
+# Lock down storage account after container is created
+resource "azurerm_storage_account_network_rules" "storage_network_lockdown" {
+  storage_account_id = module.storageaccount.storage_account_id
+
+  default_action = "Deny"
+  bypass         = ["AzureServices"]
+
+  depends_on = [module.storage_blob_container]
 }
 
 module "keyvault" {
@@ -91,11 +95,11 @@ module "containerapp" {
   source = "./Modules/containerapp"
   container_environment_name = "env-${local.project_name}-${var.environment}"
   container_app_name = "app-${local.project_name}-${var.environment}"
-  container_name = "container-${local.project_name}-${var.environment}"
+  container_name = "app-${local.project_name}-${var.environment}"
   resourcegroupname = module.ResourceGroup["backend"].rgname
   location = module.ResourceGroup["backend"].location
   subnet_id = module.VirtualNetwork.subnets["backend"].subnet_id
-  managed_identity_id = module.managedidentity.user_assigned_identity_id
+  managed_identity_id = module.managedidentity.backend_identity_id
   cpu = var.cpu
   memory = var.memory
 }
@@ -109,16 +113,19 @@ module "staticwebapp" {
 
 module "openai" {
   source = "./Modules/openai"
-  openainame = "ai-${local.project_name}-${var.environment}"
-  modeldeploymentname = "modeldeployment-${local.project_name}-${var.environment}"
-  aifoundryname = "aifoundry-${local.project_name}-${var.environment}"
-  resourcegroupname = module.ResourceGroup["ai"].rgname
-  location = module.ResourceGroup["ai"].location
-  resource_group_id = module.ResourceGroup["ai"].id
-  storage_account_id = module.storageaccount.storage_account_id
-  app_insights_id = module.app_insights.app_insights_id
-  model_name = var.openai_model_id
-  model_version = "2024-07-18"
+  
+  openainame              = "ai-${local.project_name}-${var.environment}"
+  modeldeploymentname     = "modeldeployment-${local.project_name}-${var.environment}"
+  resourcegroupname       = module.ResourceGroup["ai"].rgname
+  location                = module.ResourceGroup["ai"].location
+  model_name              = var.openai_model_id
+  model_version           = "2024-07-18"
+  aifoundryname          = "aifndry-${local.project_name}-${var.environment}"
+  resource_group_id       = module.ResourceGroup["ai"].id
+  storage_account_id      = module.storageaccount.storage_account_id
+  keyvault_id             = module.keyvault.keyvault_id
+  app_insights_id         = module.app_insights.app_insights_id
+
 }
 
 module "app_insights" {
@@ -127,21 +134,6 @@ module "app_insights" {
   resourcegroupname = module.ResourceGroup["ai"].rgname
   location = module.ResourceGroup["ai"].location
 }
-
-
-module "managedidentity" {
-  source = "./Modules/managedidentity"
-  backend_mid_name = "mid-backend-${local.project_name}-${var.environment}"
-  resourcegroupname = module.ResourceGroup["backend"].rgname
-  location = module.ResourceGroup["backend"].location
-  storage_account_id = module.storageaccount.storage_account_id
-  keyvault_id = module.keyvault.keyvault_id
-  cosmos_id = module.cosmosdb.cosmosdb_account_id
-  # ai_foundry_id = module.openai.ai_foundry_workspace_id
-  tenant_id = data.azurerm_client_config.current.tenant_id
-  acr_id = module.acr.azr_id
-}
-
 
 module "private_endpoints" {
   source = "./Modules/privateendpoint"
@@ -179,5 +171,36 @@ module "private_endpoints" {
   }
  }
 
-
+module "managedidentity" {
+  source = "./Modules/managedidentity"
+  
+  managed_identities = {
+    staticwebapp = {
+      name                = "mi-staticwebapp-${local.project_name}-${var.environment}"
+      has_keyvault_access = false
+      has_storage_access  = false
+      has_cosmos_access   = false
+      has_openai_access   = false
+      has_acr_access      = false
+    }
+    backend = {
+      name                = "mi-backend-${local.project_name}-${var.environment}"
+      has_keyvault_access = true
+      has_storage_access  = true
+      has_cosmos_access   = true
+      has_openai_access   = true
+      has_acr_access      = true
+    }
+  }
+  resourcegroupname      = module.ResourceGroup["backend"].rgname
+  location               = module.ResourceGroup["backend"].location
+  storage_account_id     = module.storageaccount.storage_account_id
+  acr_id                 = module.acr.acr_id
+  openai_id              = module.openai.openai_account_id
+  cosmos_id              = module.cosmosdb.cosmosdb_account_id
+  ai_foundry_id          = null
+  tenant_id              = data.azurerm_client_config.current.tenant_id
+  keyvault_id            = module.keyvault.keyvault_id
+  
+}
 

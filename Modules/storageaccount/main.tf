@@ -9,11 +9,13 @@ resource "azurerm_storage_account" "fsdu_storage" {
   min_tls_version                 = "TLS1_2"
 
   network_rules {
-    default_action = "Deny"
+    default_action = "Allow"
     bypass         = ["AzureServices"]
   }
 
   tags = var.tags
 }
+
+
 
 

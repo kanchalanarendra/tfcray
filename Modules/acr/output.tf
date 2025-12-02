@@ -1,4 +1,4 @@
-output "azr_id" {
+output "acr_id" {
   value = azurerm_container_registry.fsdu_acr.id
 }
 output "acr_name" {
